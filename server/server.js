@@ -6,8 +6,8 @@ const morgan = require("morgan");
 const connectDB = require("./config/db");
 
 const authRoutes = require("./routes/auth");
-// const workspaceRoutes = require("./routes/workspace");
-// const boardRoutes = require("./routes/board");
+const workspaceRoutes = require("./routes/workspace");
+const boardRoutes = require("./routes/board");
 
 const auth = require("./middleware/auth");
 // const errorHandler = require("./middleware/errorHandler");
@@ -31,8 +31,8 @@ app.use(morgan("dev"));
 
 // routes
 app.use("/api/auth", authRoutes);
-// app.use("/api/workspaces", workspaceRoutes);
-// app.use("/api/boards", boardRoutes);
+app.use("/api/workspaces", workspaceRoutes);
+app.use("/api/boards", boardRoutes);
 
 // health
 // app.get("/api/health", (req, res) => res.json({ ok: true }));

@@ -1,8 +1,8 @@
 const express = require("express");
 const router = express.Router();
 
-const auth = require("../middlewares/auth");
-const { isOwner } = require("../middlewares/roleMiddleware");
+const auth = require("../middleware/auth");
+const { isOwner } = require("../middleware/roleMiddleware");
 
 const boardCtrl = require("../controllers/boardController");
 const listCtrl = require("../controllers/listController");
