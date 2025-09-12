@@ -1,13 +1,20 @@
+const mongoose = require("mongoose");
 const Board = require("../models/Board");
 
-// Middleware to check if logged-in user is the owner of the board
 const isOwner = async (req, res, next) => {
   try {
-    const board = await Board.findById(req.params.boardId);
+    const { boardId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(boardId)) {
+      return res.status(400).json({ message: "Invalid board ID" });
+    }
+
+    const board = await Board.findById(boardId);
     if (!board) return res.status(404).json({ message: "Board not found" });
 
+    // Make sure m.user exists before calling toString
     const member = board.members.find(
-      (m) => m.user.toString() === req.user._id.toString()
+      (m) => m.user && m.user.toString() === req.user._id.toString()
     );
 
     if (!member || member.role !== "owner") {
