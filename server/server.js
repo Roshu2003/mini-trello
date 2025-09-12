@@ -5,11 +5,11 @@ const cors = require("cors");
 const morgan = require("morgan");
 const connectDB = require("./config/db");
 
-// const authRoutes = require("./routes/auth");
+const authRoutes = require("./routes/auth");
 // const workspaceRoutes = require("./routes/workspace");
 // const boardRoutes = require("./routes/board");
 
-// const auth = require("./middleware/auth");
+const auth = require("./middleware/auth");
 // const errorHandler = require("./middleware/errorHandler");
 
 const PORT = process.env.PORT || 4000;
@@ -30,7 +30,7 @@ app.use(express.json());
 app.use(morgan("dev"));
 
 // routes
-// app.use("/api/auth", authRoutes);
+app.use("/api/auth", authRoutes);
 // app.use("/api/workspaces", workspaceRoutes);
 // app.use("/api/boards", boardRoutes);
 
