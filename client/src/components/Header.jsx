@@ -22,7 +22,7 @@ const Header = () => {
         {/* Right side - Workspace and User */}
         <div className='flex items-center space-x-4'>
           {/* Current Workspace */}
-          <div className='flex items-center space-x-3 bg-gray-50 px-4 py-2 rounded-lg'>
+          {/* <div className='flex items-center space-x-3 bg-gray-50 px-4 py-2 rounded-lg'>
             <div className='w-6 h-6 bg-purple-600 rounded flex items-center justify-center'>
               <span className='text-white text-xs font-semibold'>🏢</span>
             </div>
@@ -38,7 +38,7 @@ const Header = () => {
                 clipRule='evenodd'
               />
             </svg>
-          </div>
+          </div> */}
 
           {/* User Avatar */}
           <UserDropdown />

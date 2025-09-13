@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext, useRef } from "react";
 import API from "../../api/axios"; // make sure this points to your API
 import { AuthContext } from "../../context/AuthContext";
 
-const WorkspaceSection = () => {
+const WorkspaceSection = ({ onWorkspaceChange }) => {
   const { user } = useContext(AuthContext);
   const [workspaces, setWorkspaces] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -47,6 +47,7 @@ const WorkspaceSection = () => {
         active: ws._id === clickedId,
       }))
     );
+    if (onWorkspaceChange) onWorkspaceChange(clickedId);
   };
 
   const handleAddClick = () => {
