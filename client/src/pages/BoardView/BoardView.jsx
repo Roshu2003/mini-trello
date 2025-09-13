@@ -15,6 +15,7 @@ import { CSS } from "@dnd-kit/utilities";
 import Header from "../../components/Header";
 import API from "../../api/axios";
 import { useParams } from "react-router-dom";
+import AddCard from "../../components/AddCard";
 // Draggable Card Component
 const DraggableCard = ({ card, isOverlay = false }) => {
   const {
@@ -290,21 +291,23 @@ const BoardView = ({ board, onBack }) => {
     }
   };
 
-  const handleAddCard = async (listId) => {
-    const title = newCardTitle[listId]?.trim();
-    if (!title) return;
+  // Parent component
+  const handleAddCard = async (listId, cardData) => {
+    if (!cardData || !cardData.title?.trim()) return;
+    console.log(cardData);
 
     try {
       const res = await API.post(`/boards/${boardId}/lists/${listId}/cards`, {
-        title: title, // <-- must be string
-        description: "",
-        labels: [],
-        assignees: [],
-        dueDate: null,
+        title: cardData.title.trim(),
+        description: cardData.description?.trim() || "",
+        labels: cardData.labels || [],
+        assignees: cardData.assignees || [],
+        dueDate: cardData.dueDate || null,
       });
 
       const newCard = res.data.data;
 
+      // update frontend instantly
       setLists((prevLists) =>
         prevLists.map((list) =>
           list._id === listId
@@ -312,7 +315,8 @@ const BoardView = ({ board, onBack }) => {
             : list
         )
       );
-      setNewCardTitle((prev) => ({ ...prev, [listId]: "" }));
+
+      // cleanup: hide form
       setAddingCard((prev) => ({ ...prev, [listId]: false }));
     } catch (err) {
       console.error("Error adding card:", err);
@@ -507,56 +511,17 @@ const BoardView = ({ board, onBack }) => {
                     </div>
 
                     {/* Add Card */}
-                    {addingCard[list._id] ? (
-                      <div className='mb-2'>
-                        <textarea
-                          ref={(el) => (cardInputRefs.current[list._id] = el)}
-                          value={newCardTitle[list._id] || ""}
-                          onChange={(e) =>
-                            setNewCardTitle((prev) => ({
-                              ...prev,
-                              [list._id]: e.target.value,
-                            }))
-                          }
-                          onKeyDown={(e) => handleCardKeyDown(e, list._id)}
-                          placeholder='Enter a title for this card...'
-                          className='w-full p-3 border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm'
-                          rows='3'
-                        />
-                        <div className='flex space-x-2 mt-2'>
-                          <button
-                            onClick={() => handleAddCard(list._id)}
-                            className='px-3 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2'
-                          >
-                            Add Card
-                          </button>
-                          <button
-                            onClick={() => cancelAddingCard(list._id)}
-                            className='px-3 py-2 bg-gray-300 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-400 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2'
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <button
-                        onClick={() => startAddingCard(list._id)}
-                        className='w-full p-3 text-left text-gray-600 hover:bg-gray-200 hover:text-gray-800 rounded-lg transition-colors flex items-center space-x-2 text-sm'
-                      >
-                        <svg
-                          className='w-4 h-4'
-                          fill='currentColor'
-                          viewBox='0 0 20 20'
-                        >
-                          <path
-                            fillRule='evenodd'
-                            d='M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z'
-                            clipRule='evenodd'
-                          />
-                        </svg>
-                        <span>Add a card</span>
-                      </button>
-                    )}
+                    <AddCard
+                      listId={list._id}
+                      addingCard={addingCard}
+                      newCardTitle={newCardTitle}
+                      setNewCardTitle={setNewCardTitle}
+                      cardInputRefs={cardInputRefs}
+                      handleCardKeyDown={handleCardKeyDown}
+                      handleAddCard={handleAddCard}
+                      cancelAddingCard={cancelAddingCard}
+                      startAddingCard={startAddingCard}
+                    />
                   </div>
                 </DroppableList>
               ))}
