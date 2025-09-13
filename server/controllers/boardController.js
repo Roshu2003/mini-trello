@@ -3,46 +3,22 @@ const Workspace = require("../models/Workspace");
 const { logActivity } = require("../utils/activity");
 
 exports.createBoard = async (req, res) => {
-  const { title, workspaceId, visibility } = req.body;
+  const { title, description, workspaceId } = req.body;
+  const userId = req.user.id;
 
   try {
-    const ws = await Workspace.findById(workspaceId);
-    if (!ws) {
-      return res
-        .status(404)
-        .json({ success: false, error: "Workspace not found" });
-    }
-
-    // Only workspace owner or member can create
-    const isMember = ws.members.some(
-      (m) => m.user.toString() === req.user._id.toString()
-    );
-    if (!isMember) {
-      return res
-        .status(403)
-        .json({ success: false, error: "Not a member of workspace" });
-    }
-
-    const board = new Board({
+    const board = await Board.create({
       title,
-      workspace: workspaceId,
-      visibility: visibility || "private",
-      members: [{ user: req.user._id, role: "owner" }], // <-- FIXED
+      description,
+      workspace: workspaceId, // <-- assign workspace
+      members: [{ user: userId, role: "owner" }],
+      visibility: "workspace",
     });
 
-    await board.save();
-
-    await logActivity({
-      board: board._id,
-      user: req.user._id,
-      action: "board_created",
-      payload: { title },
-    });
-
-    res.status(201).json({ success: true, data: board });
+    res.json({ success: true, data: board });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ success: false, error: "Server error" });
+    res.status(500).json({ success: false, message: "Server error" });
   }
 };
 
@@ -84,5 +60,34 @@ exports.inviteMember = async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, error: "Server error" });
+  }
+};
+
+// Get all boards under a workspace
+exports.getBoardsByWorkspace = async (req, res) => {
+  const { workspaceId } = req.params;
+  const userId = req.user.id; // JWT provides this
+
+  try {
+    const workspace = await Workspace.findById(workspaceId);
+    if (!workspace)
+      return res
+        .status(404)
+        .json({ success: false, message: "Workspace not found" });
+
+    // Check if user is owner or member
+    const isMember = workspace.members.some(
+      (m) => m.user.toString() === userId
+    );
+    if (!isMember && workspace.owner.toString() !== userId)
+      return res.status(403).json({ success: false, message: "Access denied" });
+
+    const boards = await Board.find({ workspace: workspaceId });
+    console.log(boards);
+
+    res.json({ success: true, data: boards });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Server error" });
   }
 };

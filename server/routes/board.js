@@ -42,6 +42,8 @@ router.post(
   auth,
   commentCtrl.createComment
 );
+// Get all boards in a workspace
+router.get("/workspace/:workspaceId", auth, boardCtrl.getBoardsByWorkspace);
 
 // ===== Search =====
 // Any member can search

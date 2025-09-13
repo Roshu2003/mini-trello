@@ -13,7 +13,7 @@ const WorkspaceBoards = ({ workspaceId }) => {
     const fetchBoards = async () => {
       setLoading(true);
       try {
-        const res = await API.get(`/workspaces/${workspaceId}/boards`);
+        const res = await API.get(`/boards/workspace/${workspaceId}`);
         // adjust backend endpoint
         setBoards(res.data.data || []);
       } catch (err) {
