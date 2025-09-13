@@ -5,5 +5,6 @@ const wsCtrl = require("../controllers/workspaceController");
 
 router.post("/", auth, wsCtrl.createWorkspace);
 router.get("/", auth, wsCtrl.getWorkspaces);
+router.delete("/:workspaceId", auth, wsCtrl.deleteWorkspace);
 
 module.exports = router;

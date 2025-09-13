@@ -25,3 +25,20 @@ exports.getWorkspaces = async (req, res) => {
     res.status(500).json({ success: false, error: "Server error" });
   }
 };
+
+exports.deleteWorkspace = async (req, res) => {
+  try {
+    const { workspaceId } = req.params;
+
+    const workspace = await Workspace.findById(workspaceId);
+    if (!workspace) {
+      return res.status(404).json({ error: "Workspace not found" });
+    }
+
+    await workspace.deleteOne();
+    res.status(200).json({ message: "Workspace deleted successfully" });
+  } catch (err) {
+    console.error("Error deleting workspace:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+};
