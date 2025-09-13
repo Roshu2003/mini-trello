@@ -2,20 +2,23 @@ const Board = require("../models/Board");
 const Workspace = require("../models/Workspace");
 const { logActivity } = require("../utils/activity");
 
+// boardController.js
 exports.createBoard = async (req, res) => {
-  const { title, description, workspaceId } = req.body;
+  const { title, description, workspaceId, background } = req.body;
   const userId = req.user.id;
+  // console.log(background);
 
   try {
-    const board = await Board.create({
+    const newBoard = new Board({
       title,
       description,
-      workspace: workspaceId, // <-- assign workspace
+      workspace: workspaceId,
+      background, // <-- save background
       members: [{ user: userId, role: "owner" }],
-      visibility: "workspace",
     });
 
-    res.json({ success: true, data: board });
+    await newBoard.save();
+    res.json({ success: true, data: newBoard });
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: "Server error" });

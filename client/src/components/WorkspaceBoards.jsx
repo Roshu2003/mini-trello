@@ -14,7 +14,6 @@ const WorkspaceBoards = ({ workspaceId }) => {
       setLoading(true);
       try {
         const res = await API.get(`/boards/workspace/${workspaceId}`);
-        // adjust backend endpoint
         setBoards(res.data.data || []);
       } catch (err) {
         console.error("Failed to fetch boards:", err);
@@ -26,6 +25,11 @@ const WorkspaceBoards = ({ workspaceId }) => {
     fetchBoards();
   }, [workspaceId]);
 
+  const handleBoardCreated = (newBoard) => {
+    // Add the new board to the list dynamically
+    setBoards((prevBoards) => [...prevBoards, newBoard]);
+  };
+
   if (loading) return <p>Loading boards...</p>;
   if (!workspaceId) return <p>Please select a workspace</p>;
 
@@ -34,7 +38,11 @@ const WorkspaceBoards = ({ workspaceId }) => {
       {boards.map((board) => (
         <BoardCard key={board._id} board={board} />
       ))}
-      <CreateBoardCard workspaceId={workspaceId} />
+      {/* Pass the callback to update boards list */}
+      <CreateBoardCard
+        workspaceId={workspaceId}
+        onBoardCreated={handleBoardCreated}
+      />
     </div>
   );
 };
