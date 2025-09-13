@@ -259,20 +259,34 @@ const BoardView = ({ board, onBack }) => {
     }
   };
 
-  const handleAddCard = (listId) => {
+  const handleAddCard = async (listId) => {
     const title = newCardTitle[listId]?.trim();
     if (!title) return;
 
-    const listIndex = lists.findIndex((list) => list._id === listId);
-    if (listIndex === -1) return;
+    try {
+      const res = await API.post(`/boards/${boardId}/lists/${listId}/cards`, {
+        title: title, // <-- must be string
+        description: "",
+        labels: [],
+        assignees: [],
+        dueDate: null,
+      });
 
-    const newCard = { _id: Date.now().toString(), title };
-    const updatedLists = [...lists];
-    updatedLists[listIndex].cards.push(newCard);
+      const newCard = res.data.data;
 
-    setLists(updatedLists);
-    setNewCardTitle((prev) => ({ ...prev, [listId]: "" }));
-    setAddingCard((prev) => ({ ...prev, [listId]: false }));
+      setLists((prevLists) =>
+        prevLists.map((list) =>
+          list._id === listId
+            ? { ...list, cards: [...list.cards, newCard] }
+            : list
+        )
+      );
+      setNewCardTitle((prev) => ({ ...prev, [listId]: "" }));
+      setAddingCard((prev) => ({ ...prev, [listId]: false }));
+    } catch (err) {
+      console.error("Error adding card:", err);
+      alert(err.response?.data?.error || "Failed to add card");
+    }
   };
 
   const handleAddList = async () => {
@@ -295,28 +309,30 @@ const BoardView = ({ board, onBack }) => {
       alert(err.response?.data?.error || "Failed to create list");
     }
   };
-  // const handleDeleteList = async () => {
-  const handleDeleteList = async (listId) => {
-    // Ask for confirmation
-    if (!window.confirm("Are you sure you want to delete this list?")) return;
+  const handleDeleteList = async () => {
+    const handleDeleteList = async (listId) => {
+      // Ask for confirmation
+      if (!window.confirm("Are you sure you want to delete this list?")) return;
 
-    try {
-      // Call backend API to delete the list
-      await API.delete(`/boards/${boardId}/lists/${listId}`);
+      try {
+        // Call backend API to delete the list
+        await API.delete(`/boards/${boardId}/lists/${listId}`);
 
-      // Update frontend state to remove the list
-      setLists((prevLists) => prevLists.filter((list) => list._id !== listId));
+        // Update frontend state to remove the list
+        setLists((prevLists) =>
+          prevLists.filter((list) => list._id !== listId)
+        );
 
-      // Close the menu if open
-      setMenuOpenId(null);
-    } catch (err) {
-      console.error(
-        "Failed to delete list:",
-        err.response?.data?.error || err.message
-      );
-      alert(err.response?.data?.error || "Failed to delete list");
-    }
-    // };
+        // Close the menu if open
+        setMenuOpenId(null);
+      } catch (err) {
+        console.error(
+          "Failed to delete list:",
+          err.response?.data?.error || err.message
+        );
+        alert(err.response?.data?.error || "Failed to delete list");
+      }
+    };
   };
 
   const startAddingCard = (listId) => {
