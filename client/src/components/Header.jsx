@@ -13,33 +13,10 @@ const Header = () => {
             </div>
             <h1 className='text-xl font-bold text-gray-800'>Taskify</h1>
           </div>
-
-          <button className='bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors'>
-            Create
-          </button>
         </div>
 
         {/* Right side - Workspace and User */}
         <div className='flex items-center space-x-4'>
-          {/* Current Workspace */}
-          {/* <div className='flex items-center space-x-3 bg-gray-50 px-4 py-2 rounded-lg'>
-            <div className='w-6 h-6 bg-purple-600 rounded flex items-center justify-center'>
-              <span className='text-white text-xs font-semibold'>🏢</span>
-            </div>
-            <span className='font-medium text-gray-800'>Lorem Inc.</span>
-            <svg
-              className='w-4 h-4 text-gray-400'
-              fill='currentColor'
-              viewBox='0 0 20 20'
-            >
-              <path
-                fillRule='evenodd'
-                d='M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z'
-                clipRule='evenodd'
-              />
-            </svg>
-          </div> */}
-
           {/* User Avatar */}
           <UserDropdown />
         </div>

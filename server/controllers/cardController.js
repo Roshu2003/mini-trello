@@ -140,10 +140,25 @@ exports.deleteCard = async (req, res) => {
   const { boardId, cardId } = req.params;
 
   try {
+    // Delete the card
     const card = await Card.findByIdAndDelete(cardId);
-    if (!card)
+    if (!card) {
       return res.status(404).json({ success: false, error: "Card not found" });
+    }
 
+    // Remove cardId from the board's cards array
+    const board = await Board.findById(boardId);
+    if (!board) {
+      return res.status(404).json({ success: false, error: "Board not found" });
+    }
+
+    // Make sure board.cards exists before filtering
+    board.cards = board.cards
+      ? board.cards.filter((id) => id.toString() !== cardId)
+      : [];
+    await board.save();
+
+    // Log activity
     await logActivity({
       board: boardId,
       user: req.user._id,

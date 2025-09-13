@@ -44,6 +44,8 @@ router.patch("/:boardId/cards/move", auth, cardCtrl.moveCard);
 
 // Update a card (title, desc, labels, dueDate, etc.)
 router.patch("/:boardId/cards/:cardId", auth, cardCtrl.updateCard);
+
+router.delete("/:boardId/cards/:cardId", auth, cardCtrl.deleteCard);
 // PATCH /boards/:boardId/lists/:listId/cards/reorder
 router.patch("/:boardId/lists/:listId/cards/reorder", listCtrl.reorderCard);
 

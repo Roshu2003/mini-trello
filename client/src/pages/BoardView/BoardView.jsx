@@ -298,6 +298,20 @@ const BoardView = ({ board, onBack }) => {
     }
   };
 
+  const handleDeleteCard = async (cardId) => {
+    try {
+      // Call backend to delete card
+      await API.delete(`/boards/${boardId}/cards/${cardId}`);
+      const res = await API.get(`/boards/${boardId}/lists`);
+      setLists(res.data.data);
+      // Update frontend state
+      alert("Card deleted successfully");
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.error || "Failed to delete card");
+    }
+  };
+
   const currentBoard = board || {
     name: "My Board",
     backgroundImage:
@@ -479,7 +493,7 @@ const BoardView = ({ board, onBack }) => {
           availableLabels={["bug", "feature", "UI", "urgent", "enhancement"]}
           onClose={() => setSelectedCard(null)}
           // onUpdateCard={handleUpdateCard}
-          // onDeleteCard={handleDeleteCard}
+          onDeleteCard={handleDeleteCard}
         />
       )}
     </div>

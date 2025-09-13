@@ -1,8 +1,6 @@
 import React from "react";
 import WorkspaceSection from "./sidebar/WorkspaceSection";
-import BoardSection from "./sidebar/BoardSection";
 import ActivitySection from "./sidebar/ActivitySection";
-import SettingsSection from "./sidebar/SettingsSection";
 
 const Sidebar = ({ onWorkspaceChange }) => {
   return (
@@ -12,17 +10,8 @@ const Sidebar = ({ onWorkspaceChange }) => {
 
       {/* Navigation Menu */}
       <div className='space-y-2 mt-4'>
-        {/* Boards Section */}
-        <BoardSection />
-
         {/* Activity Section */}
         <ActivitySection />
-
-        {/* Settings Section */}
-        <SettingsSection />
-
-        {/* Billing Section */}
-        {/* <BillingSection /> */}
       </div>
     </div>
   );
