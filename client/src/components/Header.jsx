@@ -1,4 +1,5 @@
 import React from "react";
+import UserDropdown from "./UserDropdown";
 
 const Header = () => {
   return (
@@ -40,9 +41,7 @@ const Header = () => {
           </div>
 
           {/* User Avatar */}
-          <div className='w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center cursor-pointer'>
-            <span className='text-white font-semibold'>A</span>
-          </div>
+          <UserDropdown />
         </div>
       </div>
     </header>
