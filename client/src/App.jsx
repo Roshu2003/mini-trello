@@ -6,9 +6,10 @@ import {
 } from "react-router-dom";
 import { useContext } from "react";
 import { AuthContext } from "./context/AuthContext";
-
+import "./App.css";
 import Login from "./pages/Auth/Login.jsx";
-// import Signup from "./pages/Auth/Signup.jsx";
+import Signup from "./pages/Auth/Signup.jsx"; // ✅ Add this import
+import Dashboard from "./pages/Dashboard/Dashboard.jsx"; // ✅ Add this import (your Taskify dashboard)
 // import Boards from "./pages/Boards/BoardsList.jsx";
 import BoardView from "./pages/BoardView/BoardView.jsx";
 
@@ -20,16 +21,20 @@ function App() {
       <Routes>
         <Route
           path='/login'
-          element={!user ? <Login /> : <Navigate to='/boards' />}
+          element={!user ? <Login /> : <Navigate to='/dashboard' />}
         />
         <Route
           path='/'
-          element={!user ? <Login /> : <Navigate to='/boards' />}
+          element={!user ? <Login /> : <Navigate to='/dashboard' />}
         />
-        {/* <Route
+        <Route
           path='/signup'
-          element={!user ? <Signup /> : <Navigate to='/boards' />}
-        /> */}
+          element={!user ? <Signup /> : <Navigate to='/dashboard' />}
+        />
+        <Route
+          path='/dashboard'
+          element={user ? <Dashboard /> : <Navigate to='/login' />}
+        />
 
         {/* Protected Routes */}
         {/* <Route
