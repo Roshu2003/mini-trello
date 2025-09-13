@@ -18,6 +18,7 @@ import { useParams } from "react-router-dom";
 import AddCard from "../../components/AddCard";
 import CardModal from "../../components/CardModal";
 import DraggableCard from "../../components/DraggableCard";
+import BoardHeader from "../../components/BoardHeader ";
 
 // Droppable List Component
 const DroppableList = ({ list, children }) => {
@@ -288,6 +289,15 @@ const BoardView = ({ board, onBack }) => {
     }
   };
 
+  const handleInvite = async (email) => {
+    try {
+      await API.post(`/boards/${boardId}/invite`, { email });
+      alert("Invitation sent!");
+    } catch (err) {
+      alert(err.response?.data?.error || "Failed to invite member");
+    }
+  };
+
   const currentBoard = board || {
     name: "My Board",
     backgroundImage:
@@ -309,28 +319,11 @@ const BoardView = ({ board, onBack }) => {
       }}
     >
       <Header />
-      <div className='relative z-10 flex items-center justify-between p-4 bg-opacity-10 backdrop-blur-sm'>
-        <div className='flex items-center space-x-4'>
-          {onBack && (
-            <button
-              onClick={onBack}
-              className='flex items-center space-x-2 px-3 py-2 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-lg text-white transition-all duration-200 backdrop-blur-sm'
-            >
-              <svg className='w-5 h-5' fill='currentColor' viewBox='0 0 20 20'>
-                <path
-                  fillRule='evenodd'
-                  d='M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z'
-                  clipRule='evenodd'
-                />
-              </svg>
-              <span>Back</span>
-            </button>
-          )}
-          <h1 className='text-2xl font-bold text-white drop-shadow-lg'>
-            {currentBoard.name}
-          </h1>
-        </div>
-      </div>
+      <BoardHeader
+        currentBoard={currentBoard}
+        onBack={onBack}
+        onInvite={handleInvite}
+      />
 
       <div className='relative z-10 p-6'>
         <DndContext
