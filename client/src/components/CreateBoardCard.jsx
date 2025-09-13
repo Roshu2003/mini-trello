@@ -76,24 +76,6 @@ const CreateBoardCard = ({ workspaceId, onBoardCreated }) => {
               onChange={(e) => setDescription(e.target.value)}
               className='w-full border p-2 mb-3 rounded'
             />
-            {/* Background selection */}
-            {/* <div className='mb-3'>
-              <p className='font-medium mb-1'>Choose background color:</p>
-              {/* <div className='flex space-x-2'>
-                {backgroundColors.map((color) => (
-                  <div
-                    key={color}
-                    onClick={() => setBackground(color)}
-                    className={`w-8 h-8 rounded cursor-pointer border ${
-                      background === color
-                        ? "border-black"
-                        : "border-transparent"
-                    }`}
-                    style={{ backgroundColor: color }}
-                  />
-                ))}
-              </div> */}
-            {/* </div> */}
             <div className='mb-3'>
               <p className='font-medium mb-1'>choose background image:</p>
               <div className='flex space-x-2'>

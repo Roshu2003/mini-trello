@@ -40,6 +40,9 @@ const WorkspaceBoards = ({ workspaceId, onBoardClick }) => {
           key={board._id}
           board={board}
           onClick={() => onBoardClick && onBoardClick(board)}
+          onDelete={(deletedId) => {
+            setBoards((prev) => prev.filter((b) => b._id !== deletedId));
+          }}
         />
       ))}
       <CreateBoardCard

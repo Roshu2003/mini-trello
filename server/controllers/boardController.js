@@ -94,3 +94,28 @@ exports.getBoardsByWorkspace = async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
+
+exports.deleteBoard = async (req, res) => {
+  const { boardId } = req.params;
+
+  try {
+    // Find and delete the board
+    const board = await Board.findByIdAndDelete(boardId);
+    if (!board) {
+      return res.status(404).json({ success: false, error: "Board not found" });
+    }
+
+    // Optional: log deletion activity
+    await logActivity({
+      board: boardId,
+      user: req.user._id,
+      action: "board_deleted",
+      payload: { boardId },
+    });
+
+    res.json({ success: true, message: "Board deleted successfully" });
+  } catch (err) {
+    console.error("Error deleting board:", err);
+    res.status(500).json({ success: false, error: "Server error" });
+  }
+};
