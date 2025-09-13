@@ -13,7 +13,8 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import Header from "../../components/Header";
-
+import API from "../../api/axios";
+import { useParams } from "react-router-dom";
 // Draggable Card Component
 const DraggableCard = ({ card, isOverlay = false }) => {
   const {
@@ -77,34 +78,35 @@ const DroppableList = ({ list, children }) => {
 };
 
 const BoardView = ({ board, onBack }) => {
-  
-  const [lists, setLists] = useState([
-    {
-      _id: "1",
-      title: "Todo",
-      cards: [
-        { _id: "c1", title: "Landing Page" },
-        { _id: "c2", title: "Dashboard Page" },
-        { _id: "c3", title: "API Development" },
-      ],
-    },
-    {
-      _id: "2",
-      title: "In Progress",
-      cards: [],
-    },
-    {
-      _id: "3",
-      title: "Done",
-      cards: [],
-    },
-  ]);
+  const [lists, setLists] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const { id: boardId } = useParams();
+  console.log(boardId);
+  useEffect(() => {
+    const fetchLists = async () => {
+      setLoading(true);
+      try {
+        const res = await API.get(`/boards/${boardId}/lists`);
+        console.log(res.data);
+
+        setLists(res.data.data); // since your backend sends { success, data }
+      } catch (err) {
+        setError(err.response?.data?.error || "Failed to fetch lists");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchLists();
+  }, [boardId]);
 
   const [addingList, setAddingList] = useState(false);
   const [newListTitle, setNewListTitle] = useState("");
   const [addingCard, setAddingCard] = useState({});
   const [newCardTitle, setNewCardTitle] = useState({});
   const [activeCard, setActiveCard] = useState(null);
+  const [menuOpenId, setMenuOpenId] = useState(null);
 
   const newListInputRef = useRef(null);
   const cardInputRefs = useRef({});
@@ -273,14 +275,48 @@ const BoardView = ({ board, onBack }) => {
     setAddingCard((prev) => ({ ...prev, [listId]: false }));
   };
 
-  const handleAddList = () => {
+  const handleAddList = async () => {
     const title = newListTitle.trim();
     if (!title) return;
 
-    const newList = { _id: Date.now().toString(), title, cards: [] };
-    setLists((prev) => [...prev, newList]);
-    setNewListTitle("");
-    setAddingList(false);
+    try {
+      const res = await API.post(`/boards/${boardId}/lists`, { title });
+      // backend should return the newly created list in res.data.data
+      const newList = res.data.data;
+
+      setLists((prev) => [...prev, { ...newList, cards: [] }]);
+      setNewListTitle("");
+      setAddingList(false);
+    } catch (err) {
+      console.error(
+        "Failed to create list:",
+        err.response?.data?.error || err.message
+      );
+      alert(err.response?.data?.error || "Failed to create list");
+    }
+  };
+  // const handleDeleteList = async () => {
+  const handleDeleteList = async (listId) => {
+    // Ask for confirmation
+    if (!window.confirm("Are you sure you want to delete this list?")) return;
+
+    try {
+      // Call backend API to delete the list
+      await API.delete(`/boards/${boardId}/lists/${listId}`);
+
+      // Update frontend state to remove the list
+      setLists((prevLists) => prevLists.filter((list) => list._id !== listId));
+
+      // Close the menu if open
+      setMenuOpenId(null);
+    } catch (err) {
+      console.error(
+        "Failed to delete list:",
+        err.response?.data?.error || err.message
+      );
+      alert(err.response?.data?.error || "Failed to delete list");
+    }
+    // };
   };
 
   const startAddingCard = (listId) => {
@@ -374,19 +410,46 @@ const BoardView = ({ board, onBack }) => {
                 <DroppableList key={list._id} list={list}>
                   <div className='bg-gray-100 rounded-lg p-4 transition-colors min-h-[200px]'>
                     {/* List Header */}
-                    <div className='flex items-center justify-between mb-4'>
-                      <h3 className='font-semibold text-gray-800'>
-                        {list.title}
-                      </h3>
-                      <button className='p-1 hover:bg-gray-200 rounded transition-colors'>
-                        <svg
-                          className='w-4 h-4 text-gray-600'
-                          fill='currentColor'
-                          viewBox='0 0 20 20'
+                    <div className='flex justify-between items-center mb-2'>
+                      <h3 className='font-semibold'>{list.title}</h3>
+
+                      <div className='relative'>
+                        {/* Three-dot button */}
+                        <button
+                          className='p-1 hover:bg-gray-200 rounded transition-colors'
+                          onClick={() =>
+                            setMenuOpenId(
+                              menuOpenId === list._id ? null : list._id
+                            )
+                          }
                         >
-                          <path d='M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z' />
-                        </svg>
-                      </button>
+                          <svg
+                            className='w-4 h-4 text-gray-600'
+                            fill='currentColor'
+                            viewBox='0 0 20 20'
+                          >
+                            <path d='M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z' />
+                          </svg>
+                        </button>
+
+                        {/* Popup menu */}
+                        {menuOpenId === list._id && (
+                          <div className='absolute right-0 mt-2 w-32 bg-white shadow rounded border z-10'>
+                            <button
+                              className='block w-full text-left px-4 py-2 hover:bg-gray-100'
+                              onClick={() => alert("Edit functionality here")}
+                            >
+                              Edit
+                            </button>
+                            <button
+                              className='block w-full text-left px-4 py-2 hover:bg-red-100 text-red-600'
+                              onClick={() => handleDeleteList(list._id)}
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
 
                     {/* Cards */}
