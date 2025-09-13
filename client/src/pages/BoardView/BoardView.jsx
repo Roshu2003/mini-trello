@@ -77,6 +77,7 @@ const DroppableList = ({ list, children }) => {
 };
 
 const BoardView = ({ board, onBack }) => {
+  
   const [lists, setLists] = useState([
     {
       _id: "1",
