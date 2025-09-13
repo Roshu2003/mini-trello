@@ -2,6 +2,7 @@ const Card = require("../models/Card");
 const List = require("../models/List");
 const Board = require("../models/Board");
 const { logActivity } = require("../utils/activity");
+const { default: mongoose } = require("mongoose");
 
 // 🔹 Helper: calculate position when inserting between neighbors
 async function computePosition(listId, beforeId, afterId) {
@@ -36,20 +37,26 @@ exports.createCard = async (req, res) => {
 
     const pos = await computePosition(listId, null, null);
 
+    const assigneeIds = (assignees || [])
+      .filter((id) => mongoose.Types.ObjectId.isValid(id))
+      .map((id) => new mongoose.Types.ObjectId(id));
+
     const card = new Card({
       board: boardId,
       list: listId,
       title,
       description,
       labels: labels || [],
-      assignees: assignees || [],
+      assignees: assigneeIds,
       dueDate,
       position: pos,
     });
 
     await card.save();
-    await card.populate("assignees", "name email"); // return populated users
-
+    await card.populate("assignees", "name email");
+    await List.findByIdAndUpdate(listId, {
+      $push: { cards: card._id },
+    });
     await logActivity({
       board: boardId,
       user: req.user._id,
@@ -65,33 +72,39 @@ exports.createCard = async (req, res) => {
 };
 
 // 🔹 Move Card
+// controllers/cardController.js
 exports.moveCard = async (req, res) => {
-  const { boardId, cardId } = req.params;
-  const { toListId, beforeId, afterId } = req.body; // destination info
-
   try {
+    const { cardId, fromListId, toListId, position } = req.body;
+    console.log(req.body);
+
+    if (!cardId || !fromListId || !toListId) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    // Find the card
     const card = await Card.findById(cardId);
-    if (!card)
-      return res.status(404).json({ success: false, error: "Card not found" });
+    if (!card) return res.status(404).json({ error: "Card not found" });
 
-    // update list & position
-    if (toListId) card.list = toListId;
-    card.position = await computePosition(card.list, beforeId, afterId);
+    // Remove from old list
+    await List.findByIdAndUpdate(fromListId, { $pull: { cards: cardId } });
 
+    // Add into new list at specific position
+    const toList = await List.findById(toListId);
+    if (!toList)
+      return res.status(404).json({ error: "Destination list not found" });
+
+    toList.cards.splice(position, 0, cardId);
+    await toList.save();
+
+    // Update card’s list reference
+    card.list = toListId;
     await card.save();
-    await card.populate("assignees", "name email");
 
-    await logActivity({
-      board: boardId,
-      user: req.user._id,
-      action: "card_moved",
-      payload: { cardId, toListId, beforeId, afterId },
-    });
-
-    res.json({ success: true, data: card });
+    res.json({ success: true, card });
   } catch (err) {
     console.error("Error moving card:", err);
-    res.status(500).json({ success: false, error: "Server error" });
+    res.status(500).json({ error: "Server error" });
   }
 };
 

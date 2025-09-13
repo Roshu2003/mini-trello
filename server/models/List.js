@@ -8,6 +8,13 @@ const ListSchema = new mongoose.Schema(
       ref: "Board",
       required: true,
     },
+    // Add this field to keep track of card order
+    cards: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Card",
+      },
+    ],
   },
   { timestamps: true }
 );

@@ -219,7 +219,7 @@ const BoardView = ({ board, onBack }) => {
     });
   };
 
-  const handleDragEnd = (event) => {
+  const handleDragEnd = async (event) => {
     const { active, over } = event;
     setActiveCard(null);
 
@@ -234,28 +234,59 @@ const BoardView = ({ board, onBack }) => {
 
     if (!activeContainer || !overContainer) return;
 
-    if (activeContainer._id === overContainer._id) {
-      // Reordering within the same list
-      const activeIndex = activeContainer.cards.findIndex(
-        (card) => card._id === activeId
-      );
-      const overIndex = activeContainer.cards.findIndex(
-        (card) => card._id === overId
-      );
+    const activeIndex = activeContainer.cards.findIndex(
+      (card) => card._id === activeId
+    );
 
-      if (activeIndex !== overIndex) {
-        setLists((prev) =>
-          prev.map((list) => {
-            if (list._id === activeContainer._id) {
-              const newCards = [...list.cards];
-              const [removed] = newCards.splice(activeIndex, 1);
-              newCards.splice(overIndex, 0, removed);
-              return { ...list, cards: newCards };
-            }
-            return list;
-          })
-        );
-      }
+    let overIndex;
+    if (overId === overContainer._id) {
+      // Dropped on the list itself
+      overIndex = overContainer.cards.length;
+    } else {
+      overIndex = overContainer.cards.findIndex((card) => card._id === overId);
+    }
+
+    const movedCard = activeContainer.cards[activeIndex];
+    setLists((prev) =>
+      prev.map((list) => {
+        if (list._id === activeContainer._id) {
+          // remove card from old list
+          return {
+            ...list,
+            cards: list.cards.filter((card) => card._id !== activeId),
+          };
+        } else if (list._id === overContainer._id) {
+          // insert card into new list at correct index
+          const newCards = [...list.cards];
+          const insertIndex =
+            overIndex >= 0 && overIndex <= newCards.length
+              ? overIndex
+              : newCards.length;
+          newCards.splice(insertIndex, 0, movedCard);
+          return { ...list, cards: newCards };
+        } else {
+          return list;
+        }
+      })
+    );
+
+    // ✅ Fire API request (don’t block UI update)
+    try {
+      await API.patch(`/boards/${boardId}/cards/move`, {
+        cardId: activeId,
+        fromListId: activeContainer._id,
+        toListId: overContainer._id,
+        position:
+          overIndex >= 0 && overIndex <= overContainer.cards.length
+            ? overIndex
+            : overContainer.cards.length,
+      });
+      const res = await API.get(`/boards/${boardId}/lists`);
+      setLists(res.data.data);
+    } catch (err) {
+      console.error("Failed to move card:", err);
+      // Optionally revert if backend fails
+      setLists((prev) => [...prev]); // quick re-render
     }
   };
 
