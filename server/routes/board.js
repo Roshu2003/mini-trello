@@ -50,6 +50,7 @@ router.delete("/:boardId/cards/:cardId", auth, cardCtrl.deleteCard);
 router.patch("/:boardId/lists/:listId/cards/reorder", listCtrl.reorderCard);
 
 router.delete("/:boardId", auth, boardCtrl.deleteBoard);
+router.get("/:boardId/cards/search", auth, cardCtrl.searchCards);
 // ================== Comments ================== //
 // Add a comment to a card
 router.post(

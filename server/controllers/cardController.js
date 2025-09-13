@@ -172,3 +172,38 @@ exports.deleteCard = async (req, res) => {
     res.status(500).json({ success: false, error: "Server error" });
   }
 };
+
+
+exports.searchCards = async (req, res) => {
+  const { boardId } = req.params;
+  const { query } = req.query;
+
+  if (!query || !query.trim()) {
+    return res.status(400).json({ success: false, error: "Query is required" });
+  }
+
+  try {
+    // Find cards in the board
+    const cards = await Card.find({ list: { $exists: true } }) // filter by board's lists later if needed
+      .populate("assignees", "name email") // get assignee details
+      .lean();
+
+    // Filter cards manually based on query
+    const filteredCards = cards.filter((card) => {
+      const inTitle = card.title.toLowerCase().includes(query.toLowerCase());
+      const inLabels = card.labels.some((label) =>
+        label.toLowerCase().includes(query.toLowerCase())
+      );
+      const inAssignees = card.assignees.some((user) =>
+        user.name.toLowerCase().includes(query.toLowerCase())
+      );
+
+      return inTitle || inLabels || inAssignees;
+    });
+
+    res.json({ success: true, data: filteredCards });
+  } catch (err) {
+    console.error("Search cards error:", err);
+    res.status(500).json({ success: false, error: "Server error" });
+  }
+};

@@ -19,6 +19,7 @@ import AddCard from "../../components/AddCard";
 import CardModal from "../../components/CardModal";
 import DraggableCard from "../../components/DraggableCard";
 import BoardHeader from "../../components/BoardHeader ";
+import BoardSearch from "../../components/BoardSearch ";
 
 // Droppable List Component
 const DroppableList = ({ list, children }) => {
@@ -49,7 +50,7 @@ const BoardView = ({ board, onBack }) => {
   const [activeCard, setActiveCard] = useState(null);
   const [menuOpenId, setMenuOpenId] = useState(null);
   const [selectedCard, setSelectedCard] = useState(null); // Modal state
-
+  const [filteredCards, setFilteredCards] = useState([]);
   const newListInputRef = useRef(null);
   const cardInputRefs = useRef({});
 
@@ -320,183 +321,219 @@ const BoardView = ({ board, onBack }) => {
   };
 
   return (
-    <div
-      className='min-h-screen relative'
-      style={{
-        backgroundImage: currentBoard.backgroundImage
-          ? `url(${currentBoard.backgroundImage})`
-          : "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-        backgroundColor: currentBoard.backgroundColor || "#667eea",
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        backgroundRepeat: "no-repeat",
-      }}
-    >
-      <Header />
-      <BoardHeader
-        currentBoard={currentBoard}
-        onBack={onBack}
-        onInvite={handleInvite}
-      />
+    <>
+      <div
+        className='min-h-screen relative'
+        style={{
+          backgroundImage: currentBoard.backgroundImage
+            ? `url(${currentBoard.backgroundImage})`
+            : "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+          backgroundColor: currentBoard.backgroundColor || "#667eea",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
+        }}
+      >
+        <Header />
+        <BoardHeader
+          currentBoard={currentBoard}
+          onBack={onBack}
+          onInvite={handleInvite}
+        />
+        <div>
+          <BoardSearch
+            boardId={boardId}
+            onResults={(results) => setFilteredCards(results)}
+          />
 
-      <div className='relative z-10 p-6'>
-        <DndContext
-          sensors={sensors}
-          onDragStart={handleDragStart}
-          onDragOver={handleDragOver}
-          onDragEnd={handleDragEnd}
-        >
-          <SortableContext
-            items={getAllCardIds()}
-            strategy={verticalListSortingStrategy}
+          <div className='grid grid-cols-3 gap-4 mt-4'>
+            {filteredCards.map((card) => (
+              <div
+                key={card._id}
+                className='p-4 m-2 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 border border-gray-100 max-w-sm'
+              >
+                <h3 className='text-lg font-semibold text-gray-800 truncate'>
+                  {card.title}
+                </h3>
+                <div className='flex flex-wrap gap-2 mt-3'>
+                  {card.labels?.map((label) => (
+                    <span
+                      key={label}
+                      className='text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-700 font-medium hover:bg-gray-200 transition-colors duration-150'
+                    >
+                      {label}
+                    </span>
+                  ))}
+                </div>
+                <div className='text-sm mt-3 text-gray-500 font-medium'>
+                  {card.assignees?.join(", ") || "No assignees"}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className='relative z-10 p-6'>
+          <DndContext
+            sensors={sensors}
+            onDragStart={handleDragStart}
+            onDragOver={handleDragOver}
+            onDragEnd={handleDragEnd}
           >
-            <div className='flex space-x-4 overflow-x-auto hide-scrollbar pb-4'>
-              {lists.map((list) => (
-                <DroppableList key={list._id} list={list}>
-                  <div className='bg-gray-100 rounded-lg p-4 transition-colors min-h-[200px]'>
-                    {/* List Header */}
-                    <div className='flex justify-between items-center mb-2'>
-                      <h3 className='font-semibold'>{list.title}</h3>
-                      <div className='relative'>
-                        <button
-                          className='p-1 hover:bg-gray-200 rounded transition-colors'
-                          onClick={() =>
-                            setMenuOpenId(
-                              menuOpenId === list._id ? null : list._id
-                            )
-                          }
-                        >
-                          <svg
-                            className='w-4 h-4 text-gray-600'
-                            fill='currentColor'
-                            viewBox='0 0 20 20'
+            <SortableContext
+              items={getAllCardIds()}
+              strategy={verticalListSortingStrategy}
+            >
+              <div className='flex space-x-4 overflow-x-auto hide-scrollbar pb-4'>
+                {lists.map((list) => (
+                  <DroppableList key={list._id} list={list}>
+                    <div className='bg-gray-100 rounded-lg p-4 transition-colors min-h-[200px]'>
+                      {/* List Header */}
+                      <div className='flex justify-between items-center mb-2'>
+                        <h3 className='font-semibold'>{list.title}</h3>
+                        <div className='relative'>
+                          <button
+                            className='p-1 hover:bg-gray-200 rounded transition-colors'
+                            onClick={() =>
+                              setMenuOpenId(
+                                menuOpenId === list._id ? null : list._id
+                              )
+                            }
                           >
-                            <path d='M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z' />
-                          </svg>
+                            <svg
+                              className='w-4 h-4 text-gray-600'
+                              fill='currentColor'
+                              viewBox='0 0 20 20'
+                            >
+                              <path d='M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z' />
+                            </svg>
+                          </button>
+                          {menuOpenId === list._id && (
+                            <div className='absolute right-0 mt-2 w-32 bg-white shadow rounded border z-10'>
+                              <button
+                                className='block w-full text-left px-4 py-2 hover:bg-gray-100'
+                                onClick={() => alert("Edit functionality here")}
+                              >
+                                Edit
+                              </button>
+                              <button
+                                className='block w-full text-left px-4 py-2 hover:bg-red-100 text-red-600'
+                                onClick={() => handleDeleteList(list._id)}
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Cards */}
+                      <div className='space-y-2 mb-4 min-h-[20px]'>
+                        {list.cards.map((card) => (
+                          <DraggableCard
+                            key={card._id}
+                            card={card}
+                            onClick={() => setSelectedCard(card)}
+                          />
+                        ))}
+                      </div>
+
+                      {/* Add Card */}
+                      <AddCard
+                        listId={list._id}
+                        addingCard={addingCard}
+                        newCardTitle={newCardTitle}
+                        setNewCardTitle={setNewCardTitle}
+                        cardInputRefs={cardInputRefs}
+                        handleCardKeyDown={handleCardKeyDown}
+                        handleAddCard={handleAddCard}
+                        cancelAddingCard={cancelAddingCard}
+                        startAddingCard={startAddingCard}
+                      />
+                    </div>
+                  </DroppableList>
+                ))}
+
+                {/* Add List */}
+                <div className='flex-shrink-0 w-80'>
+                  {addingList ? (
+                    <div className='bg-gray-100 rounded-lg p-4'>
+                      <h3 className='text-gray-700 font-semibold text-base mb-3'>
+                        Add New List
+                      </h3>
+                      <input
+                        ref={newListInputRef}
+                        type='text'
+                        value={newListTitle}
+                        onChange={(e) => setNewListTitle(e.target.value)}
+                        onKeyDown={handleListKeyDown}
+                        placeholder='Enter list title...'
+                        className='w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 mb-3 text-sm'
+                      />
+                      <div className='flex space-x-2'>
+                        <button
+                          onClick={handleAddList}
+                          disabled={!newListTitle.trim()}
+                          className='px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2'
+                        >
+                          Add List
                         </button>
-                        {menuOpenId === list._id && (
-                          <div className='absolute right-0 mt-2 w-32 bg-white shadow rounded border z-10'>
-                            <button
-                              className='block w-full text-left px-4 py-2 hover:bg-gray-100'
-                              onClick={() => alert("Edit functionality here")}
-                            >
-                              Edit
-                            </button>
-                            <button
-                              className='block w-full text-left px-4 py-2 hover:bg-red-100 text-red-600'
-                              onClick={() => handleDeleteList(list._id)}
-                            >
-                              Delete
-                            </button>
-                          </div>
-                        )}
+                        <button
+                          onClick={() => {
+                            setAddingList(false);
+                            setNewListTitle("");
+                          }}
+                          className='px-4 py-2 bg-gray-300 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-400 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2'
+                        >
+                          Cancel
+                        </button>
                       </div>
                     </div>
-
-                    {/* Cards */}
-                    <div className='space-y-2 mb-4 min-h-[20px]'>
-                      {list.cards.map((card) => (
-                        <DraggableCard
-                          key={card._id}
-                          card={card}
-                          onClick={() => setSelectedCard(card)}
-                        />
-                      ))}
-                    </div>
-
-                    {/* Add Card */}
-                    <AddCard
-                      listId={list._id}
-                      addingCard={addingCard}
-                      newCardTitle={newCardTitle}
-                      setNewCardTitle={setNewCardTitle}
-                      cardInputRefs={cardInputRefs}
-                      handleCardKeyDown={handleCardKeyDown}
-                      handleAddCard={handleAddCard}
-                      cancelAddingCard={cancelAddingCard}
-                      startAddingCard={startAddingCard}
-                    />
-                  </div>
-                </DroppableList>
-              ))}
-
-              {/* Add List */}
-              <div className='flex-shrink-0 w-80'>
-                {addingList ? (
-                  <div className='bg-gray-100 rounded-lg p-4'>
-                    <h3 className='text-gray-700 font-semibold text-base mb-3'>
-                      Add New List
-                    </h3>
-                    <input
-                      ref={newListInputRef}
-                      type='text'
-                      value={newListTitle}
-                      onChange={(e) => setNewListTitle(e.target.value)}
-                      onKeyDown={handleListKeyDown}
-                      placeholder='Enter list title...'
-                      className='w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 mb-3 text-sm'
-                    />
-                    <div className='flex space-x-2'>
-                      <button
-                        onClick={handleAddList}
-                        disabled={!newListTitle.trim()}
-                        className='px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2'
-                      >
-                        Add List
-                      </button>
-                      <button
-                        onClick={() => {
-                          setAddingList(false);
-                          setNewListTitle("");
-                        }}
-                        className='px-4 py-2 bg-gray-300 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-400 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2'
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => setAddingList(true)}
-                    className='w-full p-4 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-lg text-black flex items-center space-x-2 transition-all duration-200 border-2 border-dashed border-white border-opacity-50 backdrop-blur-sm'
-                  >
-                    <svg
-                      className='w-5 h-5'
-                      fill='currentColor'
-                      viewBox='0 0 20 20'
+                  ) : (
+                    <button
+                      onClick={() => setAddingList(true)}
+                      className='w-full p-4 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-lg text-black flex items-center space-x-2 transition-all duration-200 border-2 border-dashed border-white border-opacity-50 backdrop-blur-sm'
                     >
-                      <path
-                        fillRule='evenodd'
-                        d='M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z'
-                        clipRule='evenodd'
-                      />
-                    </svg>
-                    <span>Add a list</span>
-                  </button>
-                )}
+                      <svg
+                        className='w-5 h-5'
+                        fill='currentColor'
+                        viewBox='0 0 20 20'
+                      >
+                        <path
+                          fillRule='evenodd'
+                          d='M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z'
+                          clipRule='evenodd'
+                        />
+                      </svg>
+                      <span>Add a list</span>
+                    </button>
+                  )}
+                </div>
               </div>
-            </div>
-          </SortableContext>
+            </SortableContext>
 
-          {/* Drag Overlay */}
-          <DragOverlay>
-            {activeCard ? <DraggableCard card={activeCard} isOverlay /> : null}
-          </DragOverlay>
-        </DndContext>
+            {/* Drag Overlay */}
+            <DragOverlay>
+              {activeCard ? (
+                <DraggableCard card={activeCard} isOverlay />
+              ) : null}
+            </DragOverlay>
+          </DndContext>
+        </div>
+
+        {/* Card Modal */}
+        {selectedCard && (
+          <CardModal
+            card={selectedCard}
+            users={board?.users || []} // safe optional chaining
+            availableLabels={["bug", "feature", "UI", "urgent", "enhancement"]}
+            onClose={() => setSelectedCard(null)}
+            // onUpdateCard={handleUpdateCard}
+            onDeleteCard={handleDeleteCard}
+          />
+        )}
       </div>
-
-      {/* Card Modal */}
-      {selectedCard && (
-        <CardModal
-          card={selectedCard}
-          users={board?.users || []} // safe optional chaining
-          availableLabels={["bug", "feature", "UI", "urgent", "enhancement"]}
-          onClose={() => setSelectedCard(null)}
-          // onUpdateCard={handleUpdateCard}
-          onDeleteCard={handleDeleteCard}
-        />
-      )}
-    </div>
+    </>
   );
 };
 
