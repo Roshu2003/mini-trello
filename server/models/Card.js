@@ -2,23 +2,29 @@ const mongoose = require("mongoose");
 
 const CardSchema = new mongoose.Schema(
   {
-    board: {
+    title: { type: String, required: true },
+    description: { type: String },
+
+    labels: [{ type: String }], // ["bug", "feature", "UI"]
+
+    assignees: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
+
+    dueDate: { type: Date },
+
+    list: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Board",
+      ref: "List",
       required: true,
     },
-    list: { type: mongoose.Schema.Types.ObjectId, ref: "List", required: true },
-    title: { type: String, required: true },
-    description: { type: String, default: "" },
-    labels: [{ type: String }],
-    assignees: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
-    dueDate: { type: Date },
-    position: { type: Number, required: true, default: 0 },
+
+    position: { type: Number, default: 0 }, // ordering cards inside a list
   },
   { timestamps: true }
 );
-
-// text index for search across title/description/labels
-CardSchema.index({ title: "text", description: "text", labels: "text" });
 
 module.exports = mongoose.model("Card", CardSchema);

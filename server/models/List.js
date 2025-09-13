@@ -2,13 +2,12 @@ const mongoose = require("mongoose");
 
 const ListSchema = new mongoose.Schema(
   {
+    title: { type: String, required: true },
     board: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Board",
       required: true,
     },
-    title: { type: String, required: true },
-    position: { type: Number, required: true, default: 0 }, // float
   },
   { timestamps: true }
 );

@@ -10,43 +10,54 @@ const cardCtrl = require("../controllers/cardController");
 const commentCtrl = require("../controllers/commentController");
 const searchCtrl = require("../controllers/searchController");
 
-// ===== Boards =====
-// Anyone logged in can create a board
+// ================== Boards ================== //
+// Create a board (any logged-in user)
 router.post("/", auth, boardCtrl.createBoard);
 
-// Only owner can invite members
+// Get all boards in a workspace
+router.get("/workspace/:workspaceId", auth, boardCtrl.getBoardsByWorkspace);
+
+// Invite member (only board owner)
 router.post("/:boardId/invite", auth, isOwner, boardCtrl.inviteMember);
 
-// Optional: Only owner can remove a member (you can add later)
-// router.delete("/:boardId/member/:userId", auth, isOwner, boardCtrl.removeMember);
+// (Optional) Remove a member (only owner)
+// router.delete("/:boardId/members/:userId", auth, isOwner, boardCtrl.removeMember);
 
-// ===== Lists =====
-// Anyone in the board can create a list
+// ================== Lists ================== //
+// Create list inside a board
 router.post("/:boardId/lists", auth, listCtrl.createList);
 
-// Only owner can reorder lists
-router.post("/:boardId/lists/reorder", auth, isOwner, listCtrl.reorderLists);
+// Get all lists (with cards) inside a board
+router.get("/:boardId/lists", auth, listCtrl.getLists);
 
-// ===== Cards =====
-// Members can create cards
+router.delete("/:boardId/lists/:listId", auth, listCtrl.deleteList);
+
+// Reorder lists (only owner)
+router.patch("/:boardId/lists/reorder", auth, isOwner, listCtrl.reorderLists);
+
+// ================== Cards ================== //
+// Create a card inside a list
 router.post("/:boardId/lists/:listId/cards", auth, cardCtrl.createCard);
 
-// Only board members can move or update cards
+// Move a card between lists or reorder inside list
 router.patch("/:boardId/cards/:cardId/move", auth, cardCtrl.moveCard);
+
+// Update a card (title, desc, labels, dueDate, etc.)
 router.patch("/:boardId/cards/:cardId", auth, cardCtrl.updateCard);
 
-// ===== Comments =====
-// Any member can comment
+// ================== Comments ================== //
+// Add a comment to a card
 router.post(
   "/:boardId/cards/:cardId/comments",
   auth,
   commentCtrl.createComment
 );
-// Get all boards in a workspace
-router.get("/workspace/:workspaceId", auth, boardCtrl.getBoardsByWorkspace);
 
-// ===== Search =====
-// Any member can search
+// (Optional) Get comments of a card
+// router.get("/:boardId/cards/:cardId/comments", auth, commentCtrl.getComments);
+
+// ================== Search ================== //
+// Search inside a board (cards, lists, members)
 router.get("/:boardId/search", auth, searchCtrl.searchBoard);
 
 module.exports = router;
