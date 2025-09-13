@@ -16,50 +16,8 @@ import Header from "../../components/Header";
 import API from "../../api/axios";
 import { useParams } from "react-router-dom";
 import AddCard from "../../components/AddCard";
-// Draggable Card Component
-const DraggableCard = ({ card, isOverlay = false }) => {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({
-    id: card._id,
-    data: {
-      type: "card",
-      card,
-    },
-  });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
-
-  if (isOverlay) {
-    return (
-      <div className='p-3 rounded-lg bg-white shadow-lg rotate-3 bg-blue-50 border-2 border-blue-300 opacity-95'>
-        <p className='text-gray-800 text-sm font-medium'>{card.title}</p>
-      </div>
-    );
-  }
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      {...attributes}
-      {...listeners}
-      className={`p-3 rounded-lg bg-white shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer border border-gray-200 ${
-        isDragging ? "opacity-50" : "hover:shadow-lg"
-      }`}
-    >
-      <p className='text-gray-800 text-sm font-medium'>{card.title}</p>
-    </div>
-  );
-};
+import CardModal from "../../components/CardModal";
+import DraggableCard from "../../components/DraggableCard";
 
 // Droppable List Component
 const DroppableList = ({ list, children }) => {
@@ -83,31 +41,13 @@ const BoardView = ({ board, onBack }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const { id: boardId } = useParams();
-  console.log(boardId);
-  useEffect(() => {
-    const fetchLists = async () => {
-      setLoading(true);
-      try {
-        const res = await API.get(`/boards/${boardId}/lists`);
-        console.log(res.data);
-
-        setLists(res.data.data); // since your backend sends { success, data }
-      } catch (err) {
-        setError(err.response?.data?.error || "Failed to fetch lists");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchLists();
-  }, [boardId]);
-
   const [addingList, setAddingList] = useState(false);
   const [newListTitle, setNewListTitle] = useState("");
   const [addingCard, setAddingCard] = useState({});
   const [newCardTitle, setNewCardTitle] = useState({});
   const [activeCard, setActiveCard] = useState(null);
   const [menuOpenId, setMenuOpenId] = useState(null);
+  const [selectedCard, setSelectedCard] = useState(null); // Modal state
 
   const newListInputRef = useRef(null);
   const cardInputRefs = useRef({});
@@ -120,6 +60,21 @@ const BoardView = ({ board, onBack }) => {
       },
     })
   );
+
+  useEffect(() => {
+    const fetchLists = async () => {
+      setLoading(true);
+      try {
+        const res = await API.get(`/boards/${boardId}/lists`);
+        setLists(res.data.data);
+      } catch (err) {
+        setError(err.response?.data?.error || "Failed to fetch lists");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchLists();
+  }, [boardId]);
 
   // Focus management
   useEffect(() => {
@@ -136,20 +91,15 @@ const BoardView = ({ board, onBack }) => {
     });
   }, [addingCard]);
 
-  // Get all card IDs for the sortable context
-  const getAllCardIds = () => {
-    return lists.flatMap((list) => list.cards.map((card) => card._id));
-  };
+  const getAllCardIds = () =>
+    lists.flatMap((list) => list.cards.map((card) => card._id));
 
-  // Find which list contains a card
-  const findCardContainer = (cardId) => {
-    return lists.find((list) => list.cards.some((card) => card._id === cardId));
-  };
+  const findCardContainer = (cardId) =>
+    lists.find((list) => list.cards.some((card) => card._id === cardId));
 
   const handleDragStart = (event) => {
     const { active } = event;
     const cardId = active.id;
-
     const container = findCardContainer(cardId);
     if (container) {
       const card = container.cards.find((card) => card._id === cardId);
@@ -159,46 +109,28 @@ const BoardView = ({ board, onBack }) => {
 
   const handleDragOver = (event) => {
     const { active, over } = event;
-
     if (!over) return;
-
     const activeId = active.id;
     const overId = over.id;
-
-    // Find containers
     const activeContainer = findCardContainer(activeId);
     const overContainer =
       findCardContainer(overId) || lists.find((list) => list._id === overId);
+    if (
+      !activeContainer ||
+      !overContainer ||
+      activeContainer._id === overContainer._id
+    )
+      return;
 
-    if (!activeContainer || !overContainer) return;
-    if (activeContainer._id === overContainer._id) return;
-
-    // Move card between lists
     setLists((prev) => {
       const activeItems = activeContainer.cards;
       const overItems = overContainer.cards;
-
       const activeIndex = activeItems.findIndex(
         (card) => card._id === activeId
       );
       const overIndex = overItems.findIndex((card) => card._id === overId);
 
-      let newIndex;
-      if (
-        overId in prev.reduce((acc, list) => ({ ...acc, [list._id]: list }), {})
-      ) {
-        // Dropping on a list
-        newIndex = overItems.length;
-      } else {
-        // Dropping on a card
-        const isBelowOverItem = over && overIndex < overItems.length - 1;
-        newIndex =
-          overIndex >= 0
-            ? isBelowOverItem
-              ? overIndex + 1
-              : overIndex
-            : overItems.length;
-      }
+      let newIndex = overIndex >= 0 ? overIndex : overItems.length;
 
       return prev.map((list) => {
         if (list._id === activeContainer._id) {
@@ -209,13 +141,9 @@ const BoardView = ({ board, onBack }) => {
         } else if (list._id === overContainer._id) {
           const newCards = [...list.cards];
           newCards.splice(newIndex, 0, activeContainer.cards[activeIndex]);
-          return {
-            ...list,
-            cards: newCards,
-          };
-        } else {
-          return list;
+          return { ...list, cards: newCards };
         }
+        return list;
       });
     });
   };
@@ -223,7 +151,6 @@ const BoardView = ({ board, onBack }) => {
   const handleDragEnd = async (event) => {
     const { active, over } = event;
     setActiveCard(null);
-
     if (!over) return;
 
     const activeId = active.id;
@@ -232,32 +159,25 @@ const BoardView = ({ board, onBack }) => {
     const activeContainer = findCardContainer(activeId);
     const overContainer =
       findCardContainer(overId) || lists.find((list) => list._id === overId);
-
     if (!activeContainer || !overContainer) return;
 
     const activeIndex = activeContainer.cards.findIndex(
       (card) => card._id === activeId
     );
-
-    let overIndex;
-    if (overId === overContainer._id) {
-      // Dropped on the list itself
-      overIndex = overContainer.cards.length;
-    } else {
-      overIndex = overContainer.cards.findIndex((card) => card._id === overId);
-    }
+    let overIndex =
+      overId === overContainer._id
+        ? overContainer.cards.length
+        : overContainer.cards.findIndex((card) => card._id === overId);
 
     const movedCard = activeContainer.cards[activeIndex];
     setLists((prev) =>
       prev.map((list) => {
         if (list._id === activeContainer._id) {
-          // remove card from old list
           return {
             ...list,
             cards: list.cards.filter((card) => card._id !== activeId),
           };
         } else if (list._id === overContainer._id) {
-          // insert card into new list at correct index
           const newCards = [...list.cards];
           const insertIndex =
             overIndex >= 0 && overIndex <= newCards.length
@@ -265,13 +185,11 @@ const BoardView = ({ board, onBack }) => {
               : newCards.length;
           newCards.splice(insertIndex, 0, movedCard);
           return { ...list, cards: newCards };
-        } else {
-          return list;
         }
+        return list;
       })
     );
 
-    // ✅ Fire API request (don’t block UI update)
     try {
       await API.patch(`/boards/${boardId}/cards/move`, {
         cardId: activeId,
@@ -286,16 +204,12 @@ const BoardView = ({ board, onBack }) => {
       setLists(res.data.data);
     } catch (err) {
       console.error("Failed to move card:", err);
-      // Optionally revert if backend fails
-      setLists((prev) => [...prev]); // quick re-render
+      setLists((prev) => [...prev]);
     }
   };
 
-  // Parent component
   const handleAddCard = async (listId, cardData) => {
     if (!cardData || !cardData.title?.trim()) return;
-    console.log(cardData);
-
     try {
       const res = await API.post(`/boards/${boardId}/lists/${listId}/cards`, {
         title: cardData.title.trim(),
@@ -304,10 +218,7 @@ const BoardView = ({ board, onBack }) => {
         assignees: cardData.assignees || [],
         dueDate: cardData.dueDate || null,
       });
-
       const newCard = res.data.data;
-
-      // update frontend instantly
       setLists((prevLists) =>
         prevLists.map((list) =>
           list._id === listId
@@ -315,8 +226,6 @@ const BoardView = ({ board, onBack }) => {
             : list
         )
       );
-
-      // cleanup: hide form
       setAddingCard((prev) => ({ ...prev, [listId]: false }));
     } catch (err) {
       console.error("Error adding card:", err);
@@ -327,12 +236,9 @@ const BoardView = ({ board, onBack }) => {
   const handleAddList = async () => {
     const title = newListTitle.trim();
     if (!title) return;
-
     try {
       const res = await API.post(`/boards/${boardId}/lists`, { title });
-      // backend should return the newly created list in res.data.data
       const newList = res.data.data;
-
       setLists((prev) => [...prev, { ...newList, cards: [] }]);
       setNewListTitle("");
       setAddingList(false);
@@ -344,36 +250,24 @@ const BoardView = ({ board, onBack }) => {
       alert(err.response?.data?.error || "Failed to create list");
     }
   };
-  const handleDeleteList = async () => {
-    const handleDeleteList = async (listId) => {
-      // Ask for confirmation
-      if (!window.confirm("Are you sure you want to delete this list?")) return;
 
-      try {
-        // Call backend API to delete the list
-        await API.delete(`/boards/${boardId}/lists/${listId}`);
-
-        // Update frontend state to remove the list
-        setLists((prevLists) =>
-          prevLists.filter((list) => list._id !== listId)
-        );
-
-        // Close the menu if open
-        setMenuOpenId(null);
-      } catch (err) {
-        console.error(
-          "Failed to delete list:",
-          err.response?.data?.error || err.message
-        );
-        alert(err.response?.data?.error || "Failed to delete list");
-      }
-    };
+  const handleDeleteList = async (listId) => {
+    if (!window.confirm("Are you sure you want to delete this list?")) return;
+    try {
+      await API.delete(`/boards/${boardId}/lists/${listId}`);
+      setLists((prevLists) => prevLists.filter((list) => list._id !== listId));
+      setMenuOpenId(null);
+    } catch (err) {
+      console.error(
+        "Failed to delete list:",
+        err.response?.data?.error || err.message
+      );
+      alert(err.response?.data?.error || "Failed to delete list");
+    }
   };
 
-  const startAddingCard = (listId) => {
+  const startAddingCard = (listId) =>
     setAddingCard((prev) => ({ ...prev, [listId]: true }));
-  };
-
   const cancelAddingCard = (listId) => {
     setAddingCard((prev) => ({ ...prev, [listId]: false }));
     setNewCardTitle((prev) => ({ ...prev, [listId]: "" }));
@@ -383,22 +277,17 @@ const BoardView = ({ board, onBack }) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleAddCard(listId);
-    } else if (e.key === "Escape") {
-      cancelAddingCard(listId);
-    }
+    } else if (e.key === "Escape") cancelAddingCard(listId);
   };
 
   const handleListKeyDown = (e) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      handleAddList();
-    } else if (e.key === "Escape") {
+    if (e.key === "Enter") handleAddList();
+    else if (e.key === "Escape") {
       setAddingList(false);
       setNewListTitle("");
     }
   };
 
-  // Default board if none provided
   const currentBoard = board || {
     name: "My Board",
     backgroundImage:
@@ -420,8 +309,7 @@ const BoardView = ({ board, onBack }) => {
       }}
     >
       <Header />
-      {/* Header */}
-      <div className='relative z-10 flex items-center justify-between p-4  bg-opacity-10 backdrop-blur-sm'>
+      <div className='relative z-10 flex items-center justify-between p-4 bg-opacity-10 backdrop-blur-sm'>
         <div className='flex items-center space-x-4'>
           {onBack && (
             <button
@@ -444,7 +332,6 @@ const BoardView = ({ board, onBack }) => {
         </div>
       </div>
 
-      {/* Board Content */}
       <div className='relative z-10 p-6'>
         <DndContext
           sensors={sensors}
@@ -463,9 +350,7 @@ const BoardView = ({ board, onBack }) => {
                     {/* List Header */}
                     <div className='flex justify-between items-center mb-2'>
                       <h3 className='font-semibold'>{list.title}</h3>
-
                       <div className='relative'>
-                        {/* Three-dot button */}
                         <button
                           className='p-1 hover:bg-gray-200 rounded transition-colors'
                           onClick={() =>
@@ -482,8 +367,6 @@ const BoardView = ({ board, onBack }) => {
                             <path d='M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z' />
                           </svg>
                         </button>
-
-                        {/* Popup menu */}
                         {menuOpenId === list._id && (
                           <div className='absolute right-0 mt-2 w-32 bg-white shadow rounded border z-10'>
                             <button
@@ -506,7 +389,11 @@ const BoardView = ({ board, onBack }) => {
                     {/* Cards */}
                     <div className='space-y-2 mb-4 min-h-[20px]'>
                       {list.cards.map((card) => (
-                        <DraggableCard key={card._id} card={card} />
+                        <DraggableCard
+                          key={card._id}
+                          card={card}
+                          onClick={() => setSelectedCard(card)}
+                        />
                       ))}
                     </div>
 
@@ -530,12 +417,9 @@ const BoardView = ({ board, onBack }) => {
               <div className='flex-shrink-0 w-80'>
                 {addingList ? (
                   <div className='bg-gray-100 rounded-lg p-4'>
-                    {/* Title */}
                     <h3 className='text-gray-700 font-semibold text-base mb-3'>
                       Add New List
                     </h3>
-
-                    {/* Input */}
                     <input
                       ref={newListInputRef}
                       type='text'
@@ -545,8 +429,6 @@ const BoardView = ({ board, onBack }) => {
                       placeholder='Enter list title...'
                       className='w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 mb-3 text-sm'
                     />
-
-                    {/* Buttons */}
                     <div className='flex space-x-2'>
                       <button
                         onClick={handleAddList}
@@ -595,6 +477,18 @@ const BoardView = ({ board, onBack }) => {
           </DragOverlay>
         </DndContext>
       </div>
+
+      {/* Card Modal */}
+      {selectedCard && (
+        <CardModal
+          card={selectedCard}
+          users={board?.users || []} // safe optional chaining
+          availableLabels={["bug", "feature", "UI", "urgent", "enhancement"]}
+          onClose={() => setSelectedCard(null)}
+          // onUpdateCard={handleUpdateCard}
+          // onDeleteCard={handleDeleteCard}
+        />
+      )}
     </div>
   );
 };
