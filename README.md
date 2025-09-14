@@ -159,10 +159,44 @@ Before running the application, make sure you have the following installed:
 - [Git](https://git-scm.com/) for cloning the repository  
 
 ---
-
 ## 📦 Installation
 
 ### 1️⃣ Clone the Repository
 ```bash
 https://github.com/Roshu2003/mini-trello.git
+cd mini-trello
+```
+### 2️⃣ Install dependencies
+### Server:
+```bash
+cd Server
+npm install
+```
+### Client:
+```bash
+cd ../Client
+npm install
+```
+### 3️⃣ Set up Environment Variables
+```bash
+PORT=4000
+MONGO_URI="Put Your URL"
+JWT_SECRET=supersecretkey
+JWT_EXPIRES_IN=7d
+```
+### 4️⃣ Run the Project
+### Server:
+```bash
+cd ../Server
+npm run dev
+```
+### Client:
+```bash
+cd ../Client
+npm run dev
+```
 
+### 5️⃣ Notes
+*   Make sure **Node.js >= 18** and **npm >= 9** are installed.
+    
+*   Ensure MongoDB is running locally or update MONGO\_URI to your cloud database.
