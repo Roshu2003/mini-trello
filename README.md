@@ -200,3 +200,126 @@ npm run dev
 *   Make sure **Node.js >= 18** and **npm >= 9** are installed.
     
 *   Ensure MongoDB is running locally or update MONGO\_URI to your cloud database.
+
+# Architecture
+*   1\. **Authentication & Security**
+    
+*   **Scenario:** User login, logout, and session management.
+    
+*   **Special Handling:**
+    
+    *   Use JWT tokens and store securely (HTTP-only cookies or localStorage with precautions).
+        
+    *   Validate context-based factors (IP, device, location) for suspicious logins.
+        
+    *   Notify users for unusual activity.
+        
+    *   Passwords must always be hashed (bcrypt) and sensitive info encrypted (AES for device info).
+        
+*   2\. **Board & Workspace Management**
+    
+*   **Scenario:** Creating, updating, or deleting boards/workspaces.
+    
+*   **Special Handling:**
+    
+    *   Role-based access: Only owners can delete or edit boards/workspaces.
+        
+    *   Ensure frontend state updates immediately after API responses.
+        
+    *   Handle concurrent updates (e.g., two users editing board titles simultaneously) — could require optimistic updates or locks.
+        
+*   3\. **Card Operations**
+    
+*   **Scenario:** Creating, updating, moving, deleting, or assigning cards.
+    
+*   **Special Handling:**
+    
+    *   Drag-and-drop operations: Update position in the database carefully to maintain ordering.
+        
+    *   Moving cards across lists or boards must log activity for history.
+        
+    *   Deleting a card should cascade or update related entities properly.
+        
+    *   Real-time updates if multiple users are viewing the same board (WebSocket/Socket.IO).
+        
+*   4\. **Member Invitations & Roles**
+    
+*   **Scenario:** Inviting members to workspaces/boards.
+    
+*   **Special Handling:**
+    
+    *   Ensure invitations are validated (email format, user existence, workspace permissions).
+        
+    *   Prevent duplicate invites.
+        
+    *   Update workspace/board state immediately after acceptance.
+        
+*   5\. **Search & Filtering**
+    
+*   **Scenario:** Searching for cards by title, labels, or assignees.
+    
+*   **Special Handling:**
+    
+    *   Optimize database queries with indexes for frequent search fields.
+        
+    *   Handle partial matches, case-insensitive search.
+        
+    *   Return paginated results if the dataset is large.
+        
+*   6\. **Activity Logging**
+    
+*   **Scenario:** Any CRUD operation on boards, lists, cards.
+    
+*   **Special Handling:**
+    
+    *   Always log user, board, action, and payload.
+        
+    *   Activity should be consistent with state changes; consider transactions for critical operations.
+        
+    *   Handle high traffic — logging shouldn’t slow down the main operation.
+        
+*   7\. **Real-Time Collaboration**
+    
+*   **Scenario:** Multiple users viewing the same board simultaneously.
+    
+*   **Special Handling:**
+    
+    *   Use WebSockets or Socket.IO for broadcasting updates like card moves, additions, deletions.
+        
+    *   Ensure updates are idempotent to avoid conflicting states.
+        
+    *   Handle reconnection gracefully for dropped connections.
+        
+*   8\. **Error Handling & Data Integrity**
+    
+*   **Scenario:** Network errors, invalid data, or database failures.
+    
+*   **Special Handling:**
+    
+    *   Use centralized error handling in backend.
+        
+    *   Validate all inputs (title length, required fields, email format).
+        
+    *   Provide meaningful frontend messages without exposing sensitive info.
+        
+    *   Ensure transactional safety where multiple related updates occur.
+        
+*   💡 **Summary of Prioritization:**
+    
+*   Authentication & user security
+    
+*   Board/workspace access control
+    
+*   Card operations (CRUD & real-time updates)
+    
+*   Member management & invites
+    
+*   Search & filtering performance
+    
+*   Activity logging for history
+    
+*   Error handling & data integrity
+
+# HLD
+![Architecture](https://github.com/Roshu2003/mini-trello/blob/main/HLD%20Trello.png?raw=true)
+
